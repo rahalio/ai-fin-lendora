@@ -1,0 +1,783 @@
+openapi: 3.0.3
+info:
+  title: Lendora
+  version: 0.1.0
+  description: Automated credit decisioning with policy overlays, refer queues, and early-warning monitors.
+  x-product-slug: ai-fin-lendora
+  x-source: ai-in-financial/ai-in-finance-g-square/
+servers:
+- url: https://api.example.com
+tags:
+- name: Applications
+  description: Loan applications
+- name: Decisions
+  description: Credit decisions
+- name: Policies
+  description: Policy packs
+- name: ReferTasks
+  description: Underwriter refer tasks
+- name: EarlyWarnings
+  description: Early-warning alerts
+- name: Models
+  description: Credit model versions
+- name: Audits
+  description: Decision audits
+paths:
+  /v1/applications:
+    get:
+      operationId: listApplications
+      tags:
+      - Applications
+      security: &id001
+      - ApiKeyAuth: []
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/Cursor'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListEnvelopeApplication'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createApplication
+      tags:
+      - Applications
+      security:
+      - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplicationCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelopeApplication'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/applications/{applicationId}/decision:
+    parameters:
+    - $ref: '#/components/parameters/ApplicationId'
+    post:
+      operationId: decideApplication
+      tags:
+      - Decisions
+      security: *id001
+      responses:
+        '201':
+          description: Decided
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelopeCreditDecision'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/policies:
+    get:
+      operationId: listPolicyPacks
+      tags:
+      - Policies
+      security: &id002
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/Cursor'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListEnvelopePolicyPack'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createPolicyPack
+      tags:
+      - Policies
+      security: *id002
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PolicyPackCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelopePolicyPack'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/refer-tasks:
+    get:
+      operationId: listReferTasks
+      tags:
+      - ReferTasks
+      security: *id002
+      parameters:
+      - $ref: '#/components/parameters/Cursor'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListEnvelopeReferTask'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/refer-tasks/{referTaskId}/overrides:
+    parameters:
+    - $ref: '#/components/parameters/ReferTaskId'
+    post:
+      operationId: createOverride
+      tags:
+      - ReferTasks
+      security: *id002
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OverrideCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelopeOverride'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/early-warnings:
+    get:
+      operationId: listEarlyWarnings
+      tags:
+      - EarlyWarnings
+      security: *id002
+      parameters:
+      - $ref: '#/components/parameters/Cursor'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListEnvelopeEarlyWarningAlert'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/models:
+    get:
+      operationId: listCreditModels
+      tags:
+      - Models
+      security: *id002
+      parameters:
+      - $ref: '#/components/parameters/Cursor'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListEnvelopeModelVersion'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/audits:
+    post:
+      operationId: createDecisionAudit
+      tags:
+      - Audits
+      security: *id002
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - applicationId
+              properties:
+                applicationId:
+                  type: string
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelopeDecisionAudit'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+    ApplicationId:
+      name: applicationId
+      in: path
+      required: true
+      schema:
+        type: string
+    ReferTaskId:
+      name: referTaskId
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UnprocessableEntity:
+      description: Unprocessable entity
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    ResponseMeta:
+      type: object
+      required:
+      - requestId
+      - timestamp
+      properties:
+        requestId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    Problem:
+      type: object
+      required:
+      - type
+      - title
+      - status
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+    Application:
+      type: object
+      required:
+      - id
+      - productId
+      - applicantRef
+      - amount
+      - status
+      properties:
+        id:
+          type: string
+        productId:
+          type: string
+        applicantRef:
+          type: string
+        amount:
+          type: number
+        status:
+          type: string
+          enum:
+          - received
+          - decided
+          - booked
+          - withdrawn
+    ApplicationCreate:
+      type: object
+      required:
+      - productId
+      - applicantRef
+      - amount
+      - currency
+      properties:
+        productId:
+          type: string
+        applicantRef:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+        features:
+          type: object
+          additionalProperties: true
+    CreditDecision:
+      type: object
+      required:
+      - id
+      - applicationId
+      - outcome
+      - reasonCodes
+      properties:
+        id:
+          type: string
+        applicationId:
+          type: string
+        outcome:
+          type: string
+          enum:
+          - accept
+          - refer
+          - decline
+        score:
+          type: number
+        reasonCodes:
+          type: array
+          items:
+            type: string
+        policyVersionId:
+          type: string
+        modelVersionId:
+          type: string
+    PolicyPack:
+      type: object
+      required:
+      - id
+      - productId
+      - version
+      - status
+      properties:
+        id:
+          type: string
+        productId:
+          type: string
+        maxDti:
+          type: number
+        maxAmount:
+          type: number
+        excludedSegments:
+          type: array
+          items:
+            type: string
+        version:
+          type: string
+        status:
+          type: string
+          enum:
+          - draft
+          - active
+          - retired
+    PolicyPackCreate:
+      type: object
+      required:
+      - productId
+      - version
+      properties:
+        productId:
+          type: string
+        maxDti:
+          type: number
+        maxAmount:
+          type: number
+        excludedSegments:
+          type: array
+          items:
+            type: string
+        version:
+          type: string
+    ReferTask:
+      type: object
+      required:
+      - id
+      - applicationId
+      - decisionId
+      - status
+      properties:
+        id:
+          type: string
+        applicationId:
+          type: string
+        decisionId:
+          type: string
+        status:
+          type: string
+          enum:
+          - open
+          - in_progress
+          - closed
+        assigneeId:
+          type: string
+    Override:
+      type: object
+      required:
+      - id
+      - referTaskId
+      - finalOutcome
+      properties:
+        id:
+          type: string
+        referTaskId:
+          type: string
+        finalOutcome:
+          type: string
+          enum:
+          - accept
+          - decline
+        justification:
+          type: string
+        underwriterId:
+          type: string
+    OverrideCreate:
+      type: object
+      required:
+      - finalOutcome
+      - justification
+      properties:
+        finalOutcome:
+          type: string
+          enum:
+          - accept
+          - decline
+        justification:
+          type: string
+    EarlyWarningAlert:
+      type: object
+      required:
+      - id
+      - accountId
+      - signal
+      - severity
+      - status
+      properties:
+        id:
+          type: string
+        accountId:
+          type: string
+        applicationId:
+          type: string
+        signal:
+          type: string
+        severity:
+          type: string
+          enum:
+          - low
+          - medium
+          - high
+        status:
+          type: string
+          enum:
+          - open
+          - acknowledged
+          - closed
+    ModelVersion:
+      type: object
+      required:
+      - id
+      - name
+      - role
+      - status
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum:
+          - champion
+          - challenger
+        status:
+          type: string
+          enum:
+          - candidate
+          - production
+          - retired
+    DecisionAudit:
+      type: object
+      required:
+      - id
+      - applicationId
+      properties:
+        id:
+          type: string
+        applicationId:
+          type: string
+        downloadUrl:
+          type: string
+          format: uri
+    DataEnvelopeApplication:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          $ref: '#/components/schemas/Application'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    ListEnvelopeApplication:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          type: object
+          required:
+          - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Application'
+            nextCursor:
+              type: string
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    DataEnvelopeCreditDecision:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          $ref: '#/components/schemas/CreditDecision'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    ListEnvelopeCreditDecision:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          type: object
+          required:
+          - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/CreditDecision'
+            nextCursor:
+              type: string
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    DataEnvelopePolicyPack:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          $ref: '#/components/schemas/PolicyPack'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    ListEnvelopePolicyPack:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          type: object
+          required:
+          - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/PolicyPack'
+            nextCursor:
+              type: string
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    DataEnvelopeReferTask:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          $ref: '#/components/schemas/ReferTask'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    ListEnvelopeReferTask:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          type: object
+          required:
+          - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/ReferTask'
+            nextCursor:
+              type: string
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    DataEnvelopeOverride:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          $ref: '#/components/schemas/Override'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    ListEnvelopeOverride:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          type: object
+          required:
+          - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Override'
+            nextCursor:
+              type: string
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    DataEnvelopeEarlyWarningAlert:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          $ref: '#/components/schemas/EarlyWarningAlert'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    ListEnvelopeEarlyWarningAlert:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          type: object
+          required:
+          - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/EarlyWarningAlert'
+            nextCursor:
+              type: string
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    DataEnvelopeModelVersion:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          $ref: '#/components/schemas/ModelVersion'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    ListEnvelopeModelVersion:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          type: object
+          required:
+          - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/ModelVersion'
+            nextCursor:
+              type: string
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    DataEnvelopeDecisionAudit:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          $ref: '#/components/schemas/DecisionAudit'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    ListEnvelopeDecisionAudit:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          type: object
+          required:
+          - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/DecisionAudit'
+            nextCursor:
+              type: string
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
