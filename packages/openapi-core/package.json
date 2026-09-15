@@ -1,0 +1,18 @@
+{
+  "name": "@lendora/openapi-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OpenAPI contracts for Lendora (common + identity + credit domains)",
+  "scripts": {
+    "lint:domains": "redocly lint",
+    "bundle:domains": "mkdir -p src/.bundled && redocly bundle identity --output src/.bundled/identity.openapi.yaml && redocly bundle identity --output src/.bundled/identity.json && redocly bundle applications --output src/.bundled/applications.openapi.yaml && redocly bundle applications --output src/.bundled/applications.json && redocly bundle policies --output src/.bundled/policies.openapi.yaml && redocly bundle policies --output src/.bundled/policies.json && redocly bundle referrals --output src/.bundled/referrals.openapi.yaml && redocly bundle referrals --output src/.bundled/referrals.json && redocly bundle early-warnings --output src/.bundled/early-warnings.openapi.yaml && redocly bundle early-warnings --output src/.bundled/early-warnings.json && redocly bundle models --output src/.bundled/models.openapi.yaml && redocly bundle models --output src/.bundled/models.json && redocly bundle audits --output src/.bundled/audits.openapi.yaml && redocly bundle audits --output src/.bundled/audits.json",
+    "lint": "pnpm run lint:domains",
+    "bundle": "pnpm run bundle:domains"
+  },
+  "devDependencies": {
+    "@redocly/cli": "^1.34.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

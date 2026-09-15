@@ -1,0 +1,246 @@
+openapi: 3.1.0
+info:
+  title: Policies schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    PolicyPackId:
+      type: string
+      pattern: '^pol_[0-9A-HJKMNP-TV-Z]{26}$'
+    ReasonCodeId:
+      type: string
+      pattern: '^rsn_[0-9A-HJKMNP-TV-Z]{26}$'
+    ProductLine:
+      type: string
+      enum: [personal, sme]
+    PolicyPackStatus:
+      type: string
+      enum: [draft, pending_approval, active, retired]
+    PolicyPack:
+      type: object
+      required: [id, tenantId, productId, productLine, version, status, createdAt, updatedAt]
+      x-dynamodb:
+        domain: POLICIES
+        entityType: POLICY_PACK
+        entityTypePk: POLICY_PACKS
+        pkPattern: entity
+        tableType: base
+        softDeleteEnabled: false
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+        gsi2Enabled: true
+        gsi2PKFields: [tenantId]
+        gsi2SKFields: [updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/PolicyPackId'
+        tenantId:
+          $ref: ./common/primitives.yaml#/components/schemas/TenantId
+        productId:
+          type: string
+        productLine:
+          $ref: '#/components/schemas/ProductLine'
+        maxDti:
+          type: number
+        maxAmount:
+          type: number
+        excludedSegments:
+          type: array
+          items:
+            type: string
+        version:
+          type: string
+        status:
+          $ref: '#/components/schemas/PolicyPackStatus'
+        dualApprovalRequired:
+          type: boolean
+        approverIds:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    PolicyPackCreate:
+      type: object
+      required: [productId, productLine, version]
+      properties:
+        productId:
+          type: string
+        productLine:
+          $ref: '#/components/schemas/ProductLine'
+        maxDti:
+          type: number
+        maxAmount:
+          type: number
+        excludedSegments:
+          type: array
+          items:
+            type: string
+        version:
+          type: string
+    PolicyPackUpdate:
+      type: object
+      properties:
+        maxDti:
+          type: number
+        maxAmount:
+          type: number
+        excludedSegments:
+          type: array
+          items:
+            type: string
+    PolicyVetoSimulationRequest:
+      type: object
+      required: [sampleScore, dti, amount, segment]
+      properties:
+        sampleScore:
+          type: number
+        dti:
+          type: number
+        amount:
+          type: number
+        segment:
+          type: string
+    PolicyVetoSimulationResult:
+      type: object
+      required: [vetoed, outcome, hits]
+      properties:
+        vetoed:
+          type: boolean
+        outcome:
+          type: string
+          enum: [pass, decline, refer]
+        hits:
+          type: array
+          items:
+            type: string
+    ReasonCode:
+      type: object
+      required: [id, tenantId, code, underwriterWording, customerWording, status, createdAt, updatedAt]
+      x-dynamodb:
+        domain: POLICIES
+        entityType: REASON_CODE
+        entityTypePk: REASON_CODES
+        pkPattern: entity
+        tableType: base
+        softDeleteEnabled: false
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+        gsi2Enabled: true
+        gsi2PKFields: [tenantId]
+        gsi2SKFields: [updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/ReasonCodeId'
+        tenantId:
+          $ref: ./common/primitives.yaml#/components/schemas/TenantId
+        code:
+          type: string
+        underwriterWording:
+          type: string
+        customerWording:
+          type: string
+        decisionPaths:
+          type: array
+          items:
+            type: string
+            enum: [decline, refer]
+        status:
+          type: string
+          enum: [draft, published, retired]
+        taxonomyVersion:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ReasonCodeCreate:
+      type: object
+      required: [code, underwriterWording, customerWording]
+      properties:
+        code:
+          type: string
+        underwriterWording:
+          type: string
+        customerWording:
+          type: string
+        decisionPaths:
+          type: array
+          items:
+            type: string
+            enum: [decline, refer]
+    ReasonCodeUpdate:
+      type: object
+      properties:
+        underwriterWording:
+          type: string
+        customerWording:
+          type: string
+        decisionPaths:
+          type: array
+          items:
+            type: string
+            enum: [decline, refer]
+    PolicyPackResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/PolicyPack'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    PolicyPackListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/PolicyPack'
+            nextCursor:
+              type: string
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    PolicyVetoSimulationResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/PolicyVetoSimulationResult'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    ReasonCodeResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ReasonCode'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    ReasonCodeListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/ReasonCode'
+            nextCursor:
+              type: string
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

@@ -1,0 +1,338 @@
+openapi: 3.1.0
+info:
+  title: Lendora Policies API
+  version: 0.1.0
+  description: Policy packs, veto simulation, dual approval, and reason taxonomy.
+  x-domain: pol
+  x-domain-prefix: POL
+  license:
+    name: Proprietary
+servers:
+  - url: https://api.lendora.local
+security:
+  - bearerAuth: []
+tags:
+  - name: Policies
+  - name: ReasonCodes
+paths:
+  /v1/policies:
+    get:
+      operationId: listPolicyPacks
+      summary: List Policy Packs
+      tags: [Policies]
+      x-repository: PolicyPack
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: productLine
+          in: query
+          schema:
+            $ref: ./policies.schemas.yaml#/components/schemas/ProductLine
+        - name: status
+          in: query
+          schema:
+            $ref: ./policies.schemas.yaml#/components/schemas/PolicyPackStatus
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ./policies.schemas.yaml#/components/schemas/PolicyPackListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createPolicyPack
+      summary: Create Policy Pack
+      tags: [Policies]
+      x-repository: PolicyPack
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./policies.schemas.yaml#/components/schemas/PolicyPackCreate
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: ./policies.schemas.yaml#/components/schemas/PolicyPackResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '422':
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/policies/{policyPackId}:
+    parameters:
+      - name: policyPackId
+        in: path
+        required: true
+        schema:
+          $ref: ./policies.schemas.yaml#/components/schemas/PolicyPackId
+    get:
+      operationId: getPolicyPack
+      summary: Get Policy Pack
+      tags: [Policies]
+      x-repository: PolicyPack
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ./policies.schemas.yaml#/components/schemas/PolicyPackResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    patch:
+      operationId: updatePolicyPack
+      summary: Update Policy Pack
+      tags: [Policies]
+      x-repository: PolicyPack
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./policies.schemas.yaml#/components/schemas/PolicyPackUpdate
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: ./policies.schemas.yaml#/components/schemas/PolicyPackResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/policies/{policyPackId}/simulate:
+    parameters:
+      - name: policyPackId
+        in: path
+        required: true
+        schema:
+          $ref: ./policies.schemas.yaml#/components/schemas/PolicyPackId
+    post:
+      operationId: simulatePolicyVeto
+      summary: Simulate Policy Veto
+      tags: [Policies]
+      x-repository: none
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./policies.schemas.yaml#/components/schemas/PolicyVetoSimulationRequest
+      responses:
+        '200':
+          description: Simulation result
+          content:
+            application/json:
+              schema:
+                $ref: ./policies.schemas.yaml#/components/schemas/PolicyVetoSimulationResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/policies/{policyPackId}/submit-approval:
+    parameters:
+      - name: policyPackId
+        in: path
+        required: true
+        schema:
+          $ref: ./policies.schemas.yaml#/components/schemas/PolicyPackId
+    post:
+      operationId: submitPolicyPackApproval
+      summary: Submit Policy Pack Approval
+      tags: [Policies]
+      x-repository: PolicyPack
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '200':
+          description: Submitted for dual approval
+          content:
+            application/json:
+              schema:
+                $ref: ./policies.schemas.yaml#/components/schemas/PolicyPackResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/policies/{policyPackId}/approve:
+    parameters:
+      - name: policyPackId
+        in: path
+        required: true
+        schema:
+          $ref: ./policies.schemas.yaml#/components/schemas/PolicyPackId
+    post:
+      operationId: approvePolicyPack
+      summary: Approve Policy Pack
+      tags: [Policies]
+      x-repository: PolicyPack
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '200':
+          description: Approved / published when dual complete
+          content:
+            application/json:
+              schema:
+                $ref: ./policies.schemas.yaml#/components/schemas/PolicyPackResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/policies/{policyPackId}/rollback:
+    parameters:
+      - name: policyPackId
+        in: path
+        required: true
+        schema:
+          $ref: ./policies.schemas.yaml#/components/schemas/PolicyPackId
+    post:
+      operationId: rollbackPolicyPack
+      summary: Rollback Policy Pack
+      tags: [Policies]
+      x-repository: PolicyPack
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '200':
+          description: Rolled back
+          content:
+            application/json:
+              schema:
+                $ref: ./policies.schemas.yaml#/components/schemas/PolicyPackResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/reason-codes:
+    get:
+      operationId: listReasonCodes
+      summary: List Reason Codes
+      tags: [ReasonCodes]
+      x-repository: ReasonCode
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ./policies.schemas.yaml#/components/schemas/ReasonCodeListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createReasonCode
+      summary: Create Reason Code
+      tags: [ReasonCodes]
+      x-repository: ReasonCode
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./policies.schemas.yaml#/components/schemas/ReasonCodeCreate
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: ./policies.schemas.yaml#/components/schemas/ReasonCodeResponse
+        '422':
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/reason-codes/{reasonCodeId}:
+    parameters:
+      - name: reasonCodeId
+        in: path
+        required: true
+        schema:
+          $ref: ./policies.schemas.yaml#/components/schemas/ReasonCodeId
+    get:
+      operationId: getReasonCode
+      summary: Get Reason Code
+      tags: [ReasonCodes]
+      x-repository: ReasonCode
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ./policies.schemas.yaml#/components/schemas/ReasonCodeResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    patch:
+      operationId: updateReasonCode
+      summary: Update Reason Code
+      tags: [ReasonCodes]
+      x-repository: ReasonCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./policies.schemas.yaml#/components/schemas/ReasonCodeUpdate
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: ./policies.schemas.yaml#/components/schemas/ReasonCodeResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/reason-codes/{reasonCodeId}/publish:
+    parameters:
+      - name: reasonCodeId
+        in: path
+        required: true
+        schema:
+          $ref: ./policies.schemas.yaml#/components/schemas/ReasonCodeId
+    post:
+      operationId: publishReasonCode
+      summary: Publish Reason Code
+      tags: [ReasonCodes]
+      x-repository: ReasonCode
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '200':
+          description: Published
+          content:
+            application/json:
+              schema:
+                $ref: ./policies.schemas.yaml#/components/schemas/ReasonCodeResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth

@@ -1,0 +1,288 @@
+openapi: 3.1.0
+info:
+  title: Applications schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    ApplicationId:
+      type: string
+      pattern: '^app_[0-9A-HJKMNP-TV-Z]{26}$'
+    FeaturePackId:
+      type: string
+      pattern: '^ftp_[0-9A-HJKMNP-TV-Z]{26}$'
+    CreditDecisionId:
+      type: string
+      pattern: '^cdn_[0-9A-HJKMNP-TV-Z]{26}$'
+    ProductLine:
+      type: string
+      enum: [personal, sme]
+    ApplicationStatus:
+      type: string
+      enum: [received, deciding, decided, booked, withdrawn]
+    DecisionOutcome:
+      type: string
+      enum: [accept, refer, decline]
+    FeatureProvenance:
+      type: string
+      enum: [bureau, bank_transactions, alt_data]
+    TopFactor:
+      type: object
+      required: [code, direction, weight]
+      properties:
+        code:
+          type: string
+        direction:
+          type: string
+          enum: [positive, negative, neutral]
+        weight:
+          type: number
+        label:
+          type: string
+    Application:
+      type: object
+      required: [id, tenantId, productId, productLine, applicantRef, amount, currency, status, createdAt, updatedAt]
+      x-dynamodb:
+        domain: APPLICATIONS
+        entityType: APPLICATION
+        entityTypePk: APPLICATIONS
+        pkPattern: entity
+        tableType: core
+        softDeleteEnabled: false
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+        gsi2Enabled: true
+        gsi2PKFields: [tenantId]
+        gsi2SKFields: [updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/ApplicationId'
+        tenantId:
+          $ref: ./common/primitives.yaml#/components/schemas/TenantId
+        productId:
+          type: string
+        productLine:
+          $ref: '#/components/schemas/ProductLine'
+        applicantRef:
+          type: string
+        amount:
+          type: number
+        currency:
+          $ref: ./common/primitives.yaml#/components/schemas/Currency
+        status:
+          $ref: '#/components/schemas/ApplicationStatus'
+        featurePackId:
+          $ref: '#/components/schemas/FeaturePackId'
+        decisionId:
+          $ref: '#/components/schemas/CreditDecisionId'
+        receivedAt:
+          type: string
+          format: date-time
+        decidedAt:
+          type: string
+          format: date-time
+        slaDeadlineAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ApplicationCreate:
+      type: object
+      required: [productId, productLine, applicantRef, amount, currency]
+      properties:
+        productId:
+          type: string
+        productLine:
+          $ref: '#/components/schemas/ProductLine'
+        applicantRef:
+          type: string
+        amount:
+          type: number
+        currency:
+          $ref: ./common/primitives.yaml#/components/schemas/Currency
+        features:
+          type: object
+          additionalProperties: true
+    FeaturePack:
+      type: object
+      required: [id, applicationId, tenantId, provenance, createdAt, updatedAt]
+      x-dynamodb:
+        domain: APPLICATIONS
+        entityType: FEATURE_PACK
+        entityTypePk: FEATURE_PACKS
+        pkPattern: entity
+        tableType: core
+        softDeleteEnabled: false
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+        gsi2Enabled: true
+        gsi2PKFields: [tenantId]
+        gsi2SKFields: [updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/FeaturePackId'
+        applicationId:
+          $ref: '#/components/schemas/ApplicationId'
+        tenantId:
+          $ref: ./common/primitives.yaml#/components/schemas/TenantId
+        provenance:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeatureProvenance'
+        features:
+          type: object
+          additionalProperties: true
+        documentRefs:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    FeaturePackUpsert:
+      type: object
+      required: [provenance]
+      properties:
+        provenance:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeatureProvenance'
+        features:
+          type: object
+          additionalProperties: true
+        documentRefs:
+          type: array
+          items:
+            type: string
+    CreditDecision:
+      type: object
+      required: [id, applicationId, tenantId, outcome, reasonCodes, createdAt, updatedAt]
+      x-dynamodb:
+        domain: APPLICATIONS
+        entityType: CREDIT_DECISION
+        entityTypePk: CREDIT_DECISIONS
+        pkPattern: entity
+        tableType: core
+        softDeleteEnabled: false
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+        gsi2Enabled: true
+        gsi2PKFields: [tenantId]
+        gsi2SKFields: [updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/CreditDecisionId'
+        applicationId:
+          $ref: '#/components/schemas/ApplicationId'
+        tenantId:
+          $ref: ./common/primitives.yaml#/components/schemas/TenantId
+        outcome:
+          $ref: '#/components/schemas/DecisionOutcome'
+        score:
+          type: number
+        reasonCodes:
+          type: array
+          items:
+            type: string
+        policyVersionId:
+          type: string
+        modelVersionId:
+          type: string
+        featurePackId:
+          $ref: '#/components/schemas/FeaturePackId'
+        topFactors:
+          type: array
+          items:
+            $ref: '#/components/schemas/TopFactor'
+        policyVetoes:
+          type: array
+          items:
+            type: string
+        decidedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    LendingMetrics:
+      type: object
+      required: [straightThroughRate, medianDecisionMs, acceptCount, referCount, declineCount, slaBreachCount, windowStart, windowEnd]
+      properties:
+        straightThroughRate:
+          type: number
+        medianDecisionMs:
+          type: integer
+        acceptCount:
+          type: integer
+        referCount:
+          type: integer
+        declineCount:
+          type: integer
+        policyBlockCount:
+          type: integer
+        slaBreachCount:
+          type: integer
+        windowStart:
+          type: string
+          format: date-time
+        windowEnd:
+          type: string
+          format: date-time
+    ApplicationResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Application'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    ApplicationListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Application'
+            nextCursor:
+              type: string
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    FeaturePackResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/FeaturePack'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    CreditDecisionResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/CreditDecision'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    LendingMetricsResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/LendingMetrics'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

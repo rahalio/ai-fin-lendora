@@ -1,0 +1,88 @@
+openapi: 3.1.0
+info:
+  title: Early warnings schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    EarlyWarningAlertId:
+      type: string
+      pattern: '^ews_[0-9A-HJKMNP-TV-Z]{26}$'
+    AlertSeverity:
+      type: string
+      enum: [low, medium, high]
+    AlertStatus:
+      type: string
+      enum: [open, acknowledged, escalated, closed]
+    EarlyWarningAlert:
+      type: object
+      required: [id, tenantId, accountId, signal, severity, status, vintageWindow, createdAt, updatedAt]
+      x-dynamodb:
+        domain: EARLY_WARNINGS
+        entityType: EARLY_WARNING_ALERT
+        entityTypePk: EARLY_WARNING_ALERTS
+        pkPattern: entity
+        tableType: core
+        softDeleteEnabled: false
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+        gsi2Enabled: true
+        gsi2PKFields: [tenantId]
+        gsi2SKFields: [updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/EarlyWarningAlertId'
+        tenantId:
+          $ref: ./common/primitives.yaml#/components/schemas/TenantId
+        accountId:
+          type: string
+        applicationId:
+          type: string
+        signal:
+          type: string
+        severity:
+          $ref: '#/components/schemas/AlertSeverity'
+        status:
+          $ref: '#/components/schemas/AlertStatus'
+        vintageWindow:
+          type: string
+        expectedRisk:
+          type: number
+        actualRisk:
+          type: number
+        acknowledgedAt:
+          type: string
+          format: date-time
+        escalatedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    EarlyWarningAlertResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/EarlyWarningAlert'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    EarlyWarningAlertListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/EarlyWarningAlert'
+            nextCursor:
+              type: string
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

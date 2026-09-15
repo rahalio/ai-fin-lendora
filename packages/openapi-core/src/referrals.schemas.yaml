@@ -1,0 +1,153 @@
+openapi: 3.1.0
+info:
+  title: Referrals schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    ReferTaskId:
+      type: string
+      pattern: '^rft_[0-9A-HJKMNP-TV-Z]{26}$'
+    OverrideId:
+      type: string
+      pattern: '^ovr_[0-9A-HJKMNP-TV-Z]{26}$'
+    ReferTaskStatus:
+      type: string
+      enum: [open, claimed, in_progress, closed]
+    ReferTask:
+      type: object
+      required: [id, tenantId, applicationId, decisionId, status, reasonCodes, createdAt, updatedAt]
+      x-dynamodb:
+        domain: REFERRALS
+        entityType: REFER_TASK
+        entityTypePk: REFER_TASKS
+        pkPattern: entity
+        tableType: core
+        softDeleteEnabled: false
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+        gsi2Enabled: true
+        gsi2PKFields: [tenantId]
+        gsi2SKFields: [updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/ReferTaskId'
+        tenantId:
+          $ref: ./common/primitives.yaml#/components/schemas/TenantId
+        applicationId:
+          type: string
+        decisionId:
+          type: string
+        productLine:
+          type: string
+          enum: [personal, sme]
+        status:
+          $ref: '#/components/schemas/ReferTaskStatus'
+        reasonCodes:
+          type: array
+          items:
+            type: string
+        assigneeId:
+          type: string
+        slaDeadlineAt:
+          type: string
+          format: date-time
+        claimedAt:
+          type: string
+          format: date-time
+        factPackSummary:
+          type: object
+          additionalProperties: true
+        topFactors:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+              direction:
+                type: string
+              weight:
+                type: number
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Override:
+      type: object
+      required: [id, tenantId, referTaskId, finalOutcome, justification, underwriterId, createdAt, updatedAt]
+      x-dynamodb:
+        domain: REFERRALS
+        entityType: OVERRIDE
+        entityTypePk: OVERRIDES
+        pkPattern: entity
+        tableType: core
+        softDeleteEnabled: false
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+        gsi2Enabled: true
+        gsi2PKFields: [tenantId]
+        gsi2SKFields: [updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/OverrideId'
+        tenantId:
+          $ref: ./common/primitives.yaml#/components/schemas/TenantId
+        referTaskId:
+          $ref: '#/components/schemas/ReferTaskId'
+        finalOutcome:
+          type: string
+          enum: [accept, decline]
+        justification:
+          type: string
+        underwriterId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    OverrideCreate:
+      type: object
+      required: [finalOutcome, justification]
+      properties:
+        finalOutcome:
+          type: string
+          enum: [accept, decline]
+        justification:
+          type: string
+    ReferTaskResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ReferTask'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    ReferTaskListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/ReferTask'
+            nextCursor:
+              type: string
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    OverrideResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Override'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

@@ -1,0 +1,151 @@
+openapi: 3.1.0
+info:
+  title: Models schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    ModelVersionId:
+      type: string
+      pattern: '^mdl_[0-9A-HJKMNP-TV-Z]{26}$'
+    LearningEnvelopeId:
+      type: string
+      pattern: '^env_[0-9A-HJKMNP-TV-Z]{26}$'
+    ModelRole:
+      type: string
+      enum: [champion, challenger]
+    ModelStatus:
+      type: string
+      enum: [candidate, production, retired, pending_promote]
+    ModelVersion:
+      type: object
+      required: [id, tenantId, name, role, status, createdAt, updatedAt]
+      x-dynamodb:
+        domain: MODELS
+        entityType: MODEL_VERSION
+        entityTypePk: MODEL_VERSIONS
+        pkPattern: entity
+        tableType: base
+        softDeleteEnabled: false
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+        gsi2Enabled: true
+        gsi2PKFields: [tenantId]
+        gsi2SKFields: [updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/ModelVersionId'
+        tenantId:
+          $ref: ./common/primitives.yaml#/components/schemas/TenantId
+        name:
+          type: string
+        role:
+          $ref: '#/components/schemas/ModelRole'
+        status:
+          $ref: '#/components/schemas/ModelStatus'
+        stabilityScore:
+          type: number
+        discriminationScore:
+          type: number
+        vintageMetrics:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ModelVersionCreate:
+      type: object
+      required: [name, role]
+      properties:
+        name:
+          type: string
+        role:
+          $ref: '#/components/schemas/ModelRole'
+        stabilityScore:
+          type: number
+        discriminationScore:
+          type: number
+    LearningEnvelope:
+      type: object
+      required: [id, tenantId, locked, maxLoosenPct, createdAt, updatedAt]
+      x-dynamodb:
+        domain: MODELS
+        entityType: LEARNING_ENVELOPE
+        entityTypePk: LEARNING_ENVELOPES
+        pkPattern: entity
+        tableType: base
+        softDeleteEnabled: false
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+        gsi2Enabled: true
+        gsi2PKFields: [tenantId]
+        gsi2SKFields: [updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/LearningEnvelopeId'
+        tenantId:
+          $ref: ./common/primitives.yaml#/components/schemas/TenantId
+        locked:
+          type: boolean
+        maxLoosenPct:
+          type: number
+        bounds:
+          type: object
+          additionalProperties: true
+        dualApprovalRequired:
+          type: boolean
+        pendingApproverIds:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    LearningEnvelopeUpdate:
+      type: object
+      properties:
+        maxLoosenPct:
+          type: number
+        bounds:
+          type: object
+          additionalProperties: true
+        locked:
+          type: boolean
+    ModelVersionResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ModelVersion'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    ModelVersionListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/ModelVersion'
+            nextCursor:
+              type: string
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    LearningEnvelopeResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/LearningEnvelope'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

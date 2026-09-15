@@ -1,0 +1,125 @@
+openapi: 3.1.0
+info:
+  title: Lendora Early Warnings API
+  version: 0.1.0
+  description: Post-booking early-warning alerts by vintage.
+  x-domain: ews
+  x-domain-prefix: EWS
+  license:
+    name: Proprietary
+servers:
+  - url: https://api.lendora.local
+security:
+  - bearerAuth: []
+tags:
+  - name: EarlyWarnings
+paths:
+  /v1/early-warnings:
+    get:
+      operationId: listEarlyWarnings
+      summary: List Early Warnings
+      tags: [EarlyWarnings]
+      x-repository: EarlyWarningAlert
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: status
+          in: query
+          schema:
+            $ref: ./early-warnings.schemas.yaml#/components/schemas/AlertStatus
+        - name: severity
+          in: query
+          schema:
+            $ref: ./early-warnings.schemas.yaml#/components/schemas/AlertSeverity
+        - name: vintageWindow
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ./early-warnings.schemas.yaml#/components/schemas/EarlyWarningAlertListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/early-warnings/{alertId}:
+    parameters:
+      - name: alertId
+        in: path
+        required: true
+        schema:
+          $ref: ./early-warnings.schemas.yaml#/components/schemas/EarlyWarningAlertId
+    get:
+      operationId: getEarlyWarning
+      summary: Get Early Warning
+      tags: [EarlyWarnings]
+      x-repository: EarlyWarningAlert
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ./early-warnings.schemas.yaml#/components/schemas/EarlyWarningAlertResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/early-warnings/{alertId}/acknowledge:
+    parameters:
+      - name: alertId
+        in: path
+        required: true
+        schema:
+          $ref: ./early-warnings.schemas.yaml#/components/schemas/EarlyWarningAlertId
+    post:
+      operationId: acknowledgeEarlyWarning
+      summary: Acknowledge Early Warning
+      tags: [EarlyWarnings]
+      x-repository: EarlyWarningAlert
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '200':
+          description: Acknowledged
+          content:
+            application/json:
+              schema:
+                $ref: ./early-warnings.schemas.yaml#/components/schemas/EarlyWarningAlertResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/early-warnings/{alertId}/escalate:
+    parameters:
+      - name: alertId
+        in: path
+        required: true
+        schema:
+          $ref: ./early-warnings.schemas.yaml#/components/schemas/EarlyWarningAlertId
+    post:
+      operationId: escalateEarlyWarning
+      summary: Escalate Early Warning
+      tags: [EarlyWarnings]
+      x-repository: EarlyWarningAlert
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '200':
+          description: Escalated
+          content:
+            application/json:
+              schema:
+                $ref: ./early-warnings.schemas.yaml#/components/schemas/EarlyWarningAlertResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth

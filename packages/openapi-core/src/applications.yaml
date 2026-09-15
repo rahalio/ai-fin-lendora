@@ -1,0 +1,218 @@
+openapi: 3.1.0
+info:
+  title: Lendora Applications API
+  version: 0.1.0
+  description: Application intake, feature packs, credit decisions, and lending metrics.
+  x-domain: app
+  x-domain-prefix: APP
+  license:
+    name: Proprietary
+servers:
+  - url: https://api.lendora.local
+security:
+  - apiKey: []
+  - bearerAuth: []
+tags:
+  - name: Applications
+  - name: FeaturePacks
+  - name: Decisions
+  - name: Metrics
+paths:
+  /v1/applications:
+    get:
+      operationId: listApplications
+      summary: List Applications
+      tags: [Applications]
+      x-repository: Application
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: status
+          in: query
+          schema:
+            $ref: ./applications.schemas.yaml#/components/schemas/ApplicationStatus
+        - name: productLine
+          in: query
+          schema:
+            $ref: ./applications.schemas.yaml#/components/schemas/ProductLine
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ./applications.schemas.yaml#/components/schemas/ApplicationListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createApplication
+      summary: Create Application
+      tags: [Applications]
+      x-repository: Application
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./applications.schemas.yaml#/components/schemas/ApplicationCreate
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: ./applications.schemas.yaml#/components/schemas/ApplicationResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '422':
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/applications/metrics:
+    get:
+      operationId: getLendingMetrics
+      summary: Get Lending Metrics
+      tags: [Metrics]
+      x-repository: none
+      responses:
+        '200':
+          description: Funnel and SLA metrics
+          content:
+            application/json:
+              schema:
+                $ref: ./applications.schemas.yaml#/components/schemas/LendingMetricsResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/applications/{applicationId}:
+    parameters:
+      - name: applicationId
+        in: path
+        required: true
+        schema:
+          $ref: ./applications.schemas.yaml#/components/schemas/ApplicationId
+    get:
+      operationId: getApplication
+      summary: Get Application
+      tags: [Applications]
+      x-repository: Application
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ./applications.schemas.yaml#/components/schemas/ApplicationResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/applications/{applicationId}/feature-pack:
+    parameters:
+      - name: applicationId
+        in: path
+        required: true
+        schema:
+          $ref: ./applications.schemas.yaml#/components/schemas/ApplicationId
+    get:
+      operationId: getApplicationFeaturePack
+      summary: Get Application Feature Pack
+      tags: [FeaturePacks]
+      x-repository: FeaturePack
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ./applications.schemas.yaml#/components/schemas/FeaturePackResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    put:
+      operationId: upsertApplicationFeaturePack
+      summary: Upsert Application Feature Pack
+      tags: [FeaturePacks]
+      x-repository: FeaturePack
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./applications.schemas.yaml#/components/schemas/FeaturePackUpsert
+      responses:
+        '200':
+          description: Upserted
+          content:
+            application/json:
+              schema:
+                $ref: ./applications.schemas.yaml#/components/schemas/FeaturePackResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '422':
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/applications/{applicationId}/decision:
+    parameters:
+      - name: applicationId
+        in: path
+        required: true
+        schema:
+          $ref: ./applications.schemas.yaml#/components/schemas/ApplicationId
+    get:
+      operationId: getApplicationDecision
+      summary: Get Application Decision
+      tags: [Decisions]
+      x-repository: CreditDecision
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ./applications.schemas.yaml#/components/schemas/CreditDecisionResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: decideApplication
+      summary: Decide Application
+      tags: [Decisions]
+      x-repository: CreditDecision
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '201':
+          description: Decided
+          content:
+            application/json:
+              schema:
+                $ref: ./applications.schemas.yaml#/components/schemas/CreditDecisionResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '422':
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth

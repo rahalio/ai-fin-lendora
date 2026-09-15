@@ -1,0 +1,114 @@
+openapi: 3.1.0
+info:
+  title: Lendora Audits API
+  version: 0.1.0
+  description: Immutable decision audit reproduction packs.
+  x-domain: aud
+  x-domain-prefix: AUD
+  license:
+    name: Proprietary
+servers:
+  - url: https://api.lendora.local
+security:
+  - bearerAuth: []
+tags:
+  - name: Audits
+paths:
+  /v1/audits:
+    get:
+      operationId: listDecisionAudits
+      summary: List Decision Audits
+      tags: [Audits]
+      x-repository: DecisionAudit
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: applicationId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ./audits.schemas.yaml#/components/schemas/DecisionAuditListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createDecisionAudit
+      summary: Create Decision Audit
+      tags: [Audits]
+      x-repository: DecisionAudit
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./audits.schemas.yaml#/components/schemas/DecisionAuditCreate
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: ./audits.schemas.yaml#/components/schemas/DecisionAuditResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/audits/{auditId}:
+    parameters:
+      - name: auditId
+        in: path
+        required: true
+        schema:
+          $ref: ./audits.schemas.yaml#/components/schemas/DecisionAuditId
+    get:
+      operationId: getDecisionAudit
+      summary: Get Decision Audit
+      tags: [Audits]
+      x-repository: DecisionAudit
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ./audits.schemas.yaml#/components/schemas/DecisionAuditResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/audits/by-application/{applicationId}:
+    parameters:
+      - name: applicationId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getDecisionAuditByApplication
+      summary: Get Decision Audit By Application
+      tags: [Audits]
+      x-repository: DecisionAudit
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ./audits.schemas.yaml#/components/schemas/DecisionAuditResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth

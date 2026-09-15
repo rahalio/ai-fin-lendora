@@ -1,0 +1,85 @@
+openapi: 3.1.0
+info:
+  title: Audits schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    DecisionAuditId:
+      type: string
+      pattern: '^aud_[0-9A-HJKMNP-TV-Z]{26}$'
+    DecisionAudit:
+      type: object
+      required: [id, tenantId, applicationId, integrityHash, createdAt, updatedAt]
+      x-dynamodb:
+        domain: AUDITS
+        entityType: DECISION_AUDIT
+        entityTypePk: DECISION_AUDITS
+        pkPattern: entity
+        tableType: core
+        softDeleteEnabled: false
+        createdAtField: createdAt
+        updatedAtField: updatedAt
+        gsi2Enabled: true
+        gsi2PKFields: [tenantId]
+        gsi2SKFields: [updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/DecisionAuditId'
+        tenantId:
+          $ref: ./common/primitives.yaml#/components/schemas/TenantId
+        applicationId:
+          type: string
+        decisionSnapshot:
+          type: object
+          additionalProperties: true
+        policySnapshot:
+          type: object
+          additionalProperties: true
+        modelSnapshot:
+          type: object
+          additionalProperties: true
+        featureSnapshot:
+          type: object
+          additionalProperties: true
+        integrityHash:
+          type: string
+        downloadUrl:
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    DecisionAuditCreate:
+      type: object
+      required: [applicationId]
+      properties:
+        applicationId:
+          type: string
+    DecisionAuditResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/DecisionAudit'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    DecisionAuditListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/DecisionAudit'
+            nextCursor:
+              type: string
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
